@@ -112,8 +112,8 @@ def simulate_parallel(x, layers, deltat, noise_level=None):
     L = len(x)
 
     # Define FFT sizes
-    M = 6 * L
-    N = 12 * L
+    M = 4 * L
+    N = 8 * L
 
     # Wave number increment per frequency step
     deltaf = 1.0 / (N * deltat)
