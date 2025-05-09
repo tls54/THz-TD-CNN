@@ -1,5 +1,3 @@
-Here's an explanation of each layer in the network along with their functions, default values, and any custom values that were provided:
-
 1. **Convolutional Layer (`layers.Conv1D`):**
 
    - Function: The Convolutional Neural Network (CNN) uses this layer to apply a set of filters (or kernels) across the input data.
