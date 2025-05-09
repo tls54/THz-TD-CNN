@@ -5,18 +5,18 @@ from tqdm import tqdm
 from Simulate import simulate_parallel, simulate_reference
 from time import perf_counter
 
-# Multi-processing employed to speed up this process, CPU intensive task, more cores = faster. 
+# Multi-processing employed to speed up this process, CPU intensive task, more cores / workers = more faster (to an extent). 
 # Info on the multi-processing methods can be found here: https://docs.python.org/3/library/concurrent.futures.html#processpoolexecutor
 
 
 # Define limits for number of layers
-LAYER_LIMS = [1, 3]
+LAYER_LIMS = [1, 5]
 NUM_SAMPLES = 100
 
 # Define material parameter ranges
 N_RANGE = (1.1, 6.0)
-K_RANGE = (-0.1, 0.1)
-D_RANGE = (0.1e-3, 1e-3)
+K_RANGE = (-0.1, 0.01)
+D_RANGE = (0.05e-3, 0.5e-3)
 
 L = 2**12
 
@@ -84,7 +84,7 @@ def main():
     reference_pulse = simulate_reference(L, deltat)
 
     print("Processing samples in parallel...")
-    num_workers = 2  # Adjust based on available cores
+    num_workers = 20  # Adjust based on available cores
 
     with concurrent.futures.ProcessPoolExecutor(max_workers=num_workers) as executor:   # Assigns an interpreter to each process to increase speed.
         results = list(tqdm(
@@ -112,10 +112,10 @@ def main():
     print("Dataset saved successfully as synthetic_data.pt")
 
 if __name__ == "__main__":
-    num_workers = 2
+    num_workers = 32
     print('Running new version of data generation script')
     start = perf_counter()
     main()
     end = perf_counter()
 
-    print(f'Time for 100 samples with {num_workers} cores: {end - start}s')
+    print(f'Time for 1000 samples with {num_workers} cores: {end - start}s')
