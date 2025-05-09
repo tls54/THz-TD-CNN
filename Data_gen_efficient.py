@@ -20,6 +20,7 @@ D_RANGE = (0.05e-3, 0.5e-3)
 
 L = 2**12
 
+# Define utility functions
 def downsample_tensor(tensor, factor):
     """Downsample the given tensor by an integer factor."""
     return tensor[::factor]  # Simple downsampling
@@ -80,7 +81,7 @@ def main():
 
     # Generate reference pulse
     deltat = 0.0194e-12  # Time step
-    L = 2**12  # Number of time points
+    L = 2**12  # Number of time points = 4096
     reference_pulse = simulate_reference(L, deltat)
 
     print("Processing samples in parallel...")
