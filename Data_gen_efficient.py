@@ -109,7 +109,7 @@ def main():
 if __name__ == "__main__":
 
     # Define limits for number of layers
-    LAYER_LIMS = [1, 5]
+    LAYER_LIMS = [1, 3]
     NUM_SAMPLES = 1000
 
     # Define material parameter ranges
