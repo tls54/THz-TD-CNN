@@ -115,7 +115,7 @@
 
 6. **Softmax Activation (`layers.Dense(num_classes, activation='softmax')`):**
 
-    Function: The softmax function outputs probabilities of each class in the output space.
+    Function: The softmax function outputs probabilities of each class in the output space. This is not needed if sparse categorical cross entropy loss is used.
    
     Default Values:
     ```

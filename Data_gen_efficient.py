@@ -9,14 +9,6 @@ from time import perf_counter
 # Info on the multi-processing methods can be found here: https://docs.python.org/3/library/concurrent.futures.html#processpoolexecutor
 
 
-# Define limits for number of layers
-LAYER_LIMS = [1, 5]
-NUM_SAMPLES = 100
-
-# Define material parameter ranges
-N_RANGE = (1.1, 6.0)
-K_RANGE = (-0.1, 0.01)
-D_RANGE = (0.05e-3, 0.5e-3)
 
 L = 2**12
 
@@ -25,10 +17,12 @@ def downsample_tensor(tensor, factor):
     """Downsample the given tensor by an integer factor."""
     return tensor[::factor]  # Simple downsampling
 
+# create set of num layers -> int for each sample is num layers in sample
 def generate_samples():
     """Generate the number of layers for each sample."""
     return np.random.randint(LAYER_LIMS[0], LAYER_LIMS[1] + 1, NUM_SAMPLES)
 
+# generates random material parameters for 
 def generate_material_parameters(total_layers):
     """Generate random material parameters for all layers."""
     n_values = np.random.uniform(*N_RANGE, total_layers)
@@ -85,7 +79,7 @@ def main():
     reference_pulse = simulate_reference(L, deltat)
 
     print("Processing samples in parallel...")
-    num_workers = 20  # Adjust based on available cores
+    num_workers = 1  # Adjust based on available cores
 
     with concurrent.futures.ProcessPoolExecutor(max_workers=num_workers) as executor:   # Assigns an interpreter to each process to increase speed.
         results = list(tqdm(
@@ -113,6 +107,16 @@ def main():
     print("Dataset saved successfully as synthetic_data.pt")
 
 if __name__ == "__main__":
+
+    # Define limits for number of layers
+    LAYER_LIMS = [1, 5]
+    NUM_SAMPLES = 1000
+
+    # Define material parameter ranges
+    N_RANGE = (1.1, 6.0)
+    K_RANGE = (-0.1, 0.01)
+    D_RANGE = (0.05e-3, 0.5e-3)
+
     num_workers = 32
     print('Running new version of data generation script')
     start = perf_counter()
