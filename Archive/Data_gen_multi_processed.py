@@ -1,31 +1,32 @@
 import torch
 import numpy as np
 from tqdm import tqdm
+from multiprocessing import Pool, cpu_count
 from Simulate import simulate_parallel, simulate_reference
 from time import perf_counter
-
-
 
 L = 2**12  # Time points
 DOWNSAMPLE_FACTOR = 4
 
 def downsample_tensor(tensor, factor):
-    """Downsample the given tensor by an integer factor."""
     return tensor[::factor]
 
+
+
 def generate_samples():
-    """Generate the number of layers for each sample."""
     return np.random.randint(LAYER_LIMS[0], LAYER_LIMS[1] + 1, NUM_SAMPLES)
 
+
+
 def generate_material_parameters(total_layers):
-    """Generate random material parameters for all layers."""
     n_values = np.random.uniform(*N_RANGE, total_layers)
     k_values = np.random.uniform(*K_RANGE, total_layers)
     D_values = np.random.uniform(*D_RANGE, total_layers)
     return n_values, k_values, D_values
 
+
+
 def construct_material_samples(samples, n_values, k_values, D_values):
-    """Construct material samples from generated parameters."""
     material_samples = []
     layer_index = 0
     for num_layers in samples:
@@ -38,14 +39,22 @@ def construct_material_samples(samples, n_values, k_values, D_values):
         material_samples.append(sample)
     return material_samples
 
-def process_sample(idx, reference_pulse, material_samples, deltat):
-    """Process a single sample for pulse propagation and downsampling."""
-    pulse = simulate_parallel(reference_pulse, material_samples[idx], deltat, 0)[1].detach().cpu()[:L]
-    downsampled_pulse = downsample_tensor(pulse, DOWNSAMPLE_FACTOR)
-    return downsampled_pulse, material_samples[idx], len(material_samples[idx])
+
+
+def process_batch(args):
+    """Function run in each process to handle a batch of samples."""
+    reference_pulse, material_samples_batch, indices, deltat = args
+    batch_results = []
+    for i, idx in enumerate(indices):
+        pulse = simulate_parallel(reference_pulse, material_samples_batch[i], deltat, 0)[1].detach().cpu()[:L]
+        downsampled_pulse = downsample_tensor(pulse, DOWNSAMPLE_FACTOR)
+        batch_results.append((downsampled_pulse, material_samples_batch[i], len(material_samples_batch[i])))
+    return batch_results
+
+
 
 def main():
-    print("Generating synthetic dataset (single-threaded)...")
+    print("Generating synthetic dataset (multi-process batched)...")
 
     samples = generate_samples()
     total_layers = sum(samples)
@@ -57,14 +66,25 @@ def main():
     deltat = 0.0194e-12
     reference_pulse = simulate_reference(L, deltat)
 
-    print("Processing samples one-by-one (no multiprocessing)...")
-    results = []
-    for idx in tqdm(range(NUM_SAMPLES), ncols=80):
-        results.append(process_sample(idx, reference_pulse, material_samples, deltat))
+    # --- Prepare batches ---
+    NUM_PROCESSES = min(cpu_count(), 32)  # Max out logical threads
+    print(f'CPU Count: {cpu_count()}')
+    batch_size = len(samples) // NUM_PROCESSES
+    sample_batches = [samples[i*batch_size:(i+1)*batch_size] for i in range(NUM_PROCESSES)]
+    material_batches = [material_samples[i*batch_size:(i+1)*batch_size] for i in range(NUM_PROCESSES)]
+    index_batches = [list(range(i*batch_size, (i+1)*batch_size)) for i in range(NUM_PROCESSES)]
 
-    print("Processing complete. Saving dataset...")
+    args = [(reference_pulse, material_batches[i], index_batches[i], deltat) for i in range(NUM_PROCESSES)]
 
-    synthetic_data, material_params, num_layers = zip(*results)
+    print(f"Processing {NUM_SAMPLES} samples across {NUM_PROCESSES} processes...")
+
+    with Pool(processes=NUM_PROCESSES) as pool:
+        results = list(tqdm(pool.imap_unordered(process_batch, args), total=NUM_PROCESSES, ncols=80))
+
+    print("Processing complete. Aggregating results...")
+
+    all_results = [item for sublist in results for item in sublist]
+    synthetic_data, material_params, num_layers = zip(*all_results)
 
     synthetic_data = torch.stack(synthetic_data)
     num_layers = torch.tensor(num_layers)
@@ -78,20 +98,18 @@ def main():
     print("Dataset saved successfully as synthetic_data.pt")
 
 if __name__ == "__main__":
-
-    # Define limits for number of layers
     LAYER_LIMS = [1, 3]
-    NUM_SAMPLES = int(60_000)
+    NUM_SAMPLES = 60_000
 
-
-    # Define material parameter ranges
     N_RANGE = (1.1, 6.0)
     K_RANGE = (-0.1, 0.01)
     D_RANGE = (0.05e-3, 0.5e-3)
 
-    print('Running single-threaded version of data generation script')
+
+
+    print("Running multiprocessing batched data generation script")
     start = perf_counter()
     main()
     end = perf_counter()
 
-    print(f'Time for {NUM_SAMPLES} samples (single-threaded): {end - start:.2f}s')
+    print(f'Time for {NUM_SAMPLES} samples (multi-process batched): {end - start:.2f}s')
