@@ -32,7 +32,7 @@ class CNN1D_Small(nn.Module):
 class CNN1D_Large(nn.Module):
     def __init__(self, input_channels=1, num_classes=3):
         super(CNN1D_Large, self).__init__()
-        self.conv1 = nn.Conv1d(input_channels, 64, kernel_size=5, padding=2)
+        self.conv1 = nn.Conv1d(input_channels, 64, kernel_size=10, padding=2)
         self.bn1 = nn.BatchNorm1d(64)
 
         self.conv2 = nn.Conv1d(64, 128, kernel_size=5, padding=2)
