@@ -117,7 +117,7 @@ def plot_results(df):
 
 if __name__ == "__main__":
     results = []
-    MAX_WORKERS = 11
+    MAX_WORKERS = 32
     for workers in range(1, MAX_WORKERS + 1):
         result = run_benchmark(workers)
         results.append(result)
