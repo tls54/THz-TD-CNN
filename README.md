@@ -11,7 +11,7 @@ Efficient implementation of the matrix transfer method for simulating time-domai
 •	**oldSimulate.py**  
 Legacy version of the simulation code, preserved for reference and comparison.  
 
-•   **Data_gen_efficient.py**  
+•   **Multi-processing.py**  
 Generates datasets of simulated time-domain pulses. Simulations are performed with 4096 time steps to avoid FFT-related artifacts, then down sampled to 1024 points.   Multiprocessing is used to accelerate data generation. Outputs are saved as .pt files.   
 
 •	**Basic_CNN_ident.ipynb**
