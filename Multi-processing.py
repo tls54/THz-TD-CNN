@@ -8,6 +8,9 @@ from math import ceil
 
 L = 2**12  # Time points
 DOWNSAMPLE_FACTOR = 4
+DELTA_N_THRESHOLD = 0.5
+
+
 workers = cpu_count()
 
 def downsample_tensor(tensor, factor):
@@ -16,11 +19,65 @@ def downsample_tensor(tensor, factor):
 def generate_samples():
     return np.random.randint(LAYER_LIMS[0], LAYER_LIMS[1] + 1, NUM_SAMPLES)
 
-def generate_material_parameters(total_layers):
-    n_values = np.random.uniform(*N_RANGE, total_layers)
-    k_values = np.random.uniform(*K_RANGE, total_layers)
-    D_values = np.random.uniform(*D_RANGE, total_layers)
-    return n_values, k_values, D_values
+def generate_material_parameters(samples, delta_threshold, verbose=False):
+    total_layers = sum(samples)
+    n_values = []
+    k_values = []
+    D_values = []
+
+    total_regenerations = 0
+    layer_index = 0
+
+    for sample_idx, num_layers in enumerate(samples):
+        sample_n = []
+        for i in range(num_layers):
+            valid = False
+            attempts = 0
+            while not valid:
+                n_new = np.random.uniform(*N_RANGE)
+                if i == 0 or abs(n_new - sample_n[-1]) >= delta_threshold:
+                    valid = True
+                else:
+                    total_regenerations += 1
+                    if verbose:
+                        print(f"[Sample {sample_idx}, Layer {i}] Δn = {abs(n_new - sample_n[-1]):.4f} < {delta_threshold} — regenerating...")
+                attempts += 1
+                if attempts > 100:
+                    raise RuntimeError(f"Too many retries: Δn condition failed at sample {sample_idx}, layer {i}")
+
+            sample_n.append(n_new)
+            n_values.append(n_new)
+            k_values.append(np.random.uniform(*K_RANGE))
+            D_values.append(np.random.uniform(*D_RANGE))
+
+            layer_index += 1
+
+    if verbose:
+        print(f"Total Δn violations (regenerations): {total_regenerations}")
+    else:
+        print(f"Total regenerations due to Δn: {total_regenerations}")
+        
+    return np.array(n_values), np.array(k_values), np.array(D_values)
+
+
+
+def validate_delta_n_spacing(material_samples, delta_threshold, verbose=True):
+    violations = 0
+    for sample_idx, sample in enumerate(material_samples):
+        for i in range(len(sample) - 1):
+            n1 = sample[i][0].real
+            n2 = sample[i + 1][0].real
+            delta_n = abs(n2 - n1)
+            if delta_n < delta_threshold:
+                if verbose:
+                    print(f"[Validation Fail] Sample {sample_idx}, Layers {i}-{i+1}: Δn = {delta_n:.4f} < {delta_threshold}")
+                violations += 1
+    if violations == 0:
+        print("✅ All samples passed Δn spacing validation.")
+    else:
+        print(f"❌ {violations} violations found in Δn spacing.")
+
+
 
 def construct_material_samples(samples, n_values, k_values, D_values):
     material_samples = []
@@ -35,6 +92,8 @@ def construct_material_samples(samples, n_values, k_values, D_values):
         material_samples.append(sample)
     return material_samples
 
+
+
 def process_batch(args):
     """Function run in each process to handle a batch of samples."""
     reference_pulse, material_samples_batch, indices, deltat = args
@@ -45,6 +104,8 @@ def process_batch(args):
         batch_results.append((downsampled_pulse, material_samples_batch[i], len(material_samples_batch[i])))
     return batch_results
 
+
+
 def main():
     print("Generating synthetic dataset (multi-process batched)...")
 
@@ -52,7 +113,7 @@ def main():
     total_layers = sum(samples)
     print(f"Total layers to generate: {total_layers}")
 
-    n_values, k_values, D_values = generate_material_parameters(total_layers)
+    n_values, k_values, D_values = generate_material_parameters(samples, DELTA_N_THRESHOLD)
     material_samples = construct_material_samples(samples, n_values, k_values, D_values)
 
     deltat = 0.0194e-12
@@ -81,6 +142,8 @@ def main():
 
     synthetic_data, material_params, num_layers = zip(*all_results)
 
+    validate_delta_n_spacing(material_samples, DELTA_N_THRESHOLD)
+
     synthetic_data = torch.stack(synthetic_data)
     num_layers = torch.tensor(num_layers)
 
@@ -94,13 +157,14 @@ def main():
 
 if __name__ == "__main__":
     LAYER_LIMS = [1, 3]
-    NUM_SAMPLES = 60_000
+    NUM_SAMPLES = 10_000
 
     N_RANGE = (1.1, 6.0)
-    K_RANGE = (-0.1, 0.01)
+    K_RANGE = (-0.1, 0.001)
     D_RANGE = (0.05e-3, 0.5e-3)
 
     print("Running multiprocessing batched data generation script")
+    
     start = perf_counter()
     main()
     end = perf_counter()
