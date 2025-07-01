@@ -3,6 +3,11 @@ import torch.nn as nn
 from tqdm import tqdm
 
 
+def identify_device():
+    device = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
+    print(f"Using device: {device}")
+    return device
+
 ## First basic CNN 
 class CNN1D_Small(nn.Module):
     def __init__(self, input_channels=1, num_classes=3):
@@ -66,7 +71,7 @@ class CNN1D_Large(nn.Module):
 
 
 ## Define a training process that works for any of the models
-def train_model(model, train_loader, criterion, optimizer, num_epochs=10):
+def train_model(model, train_loader, criterion, optimizer, device, num_epochs=10):
     loss_values = []
     model.train()
     
@@ -77,6 +82,9 @@ def train_model(model, train_loader, criterion, optimizer, num_epochs=10):
         # Initialize tqdm with a progress bar for each epoch
         with tqdm(train_loader, desc=f"Epoch {epoch+1}/{num_epochs}", unit="batch") as pbar:
             for i, (inputs, labels) in enumerate(pbar):
+                # Move data to device
+                inputs = inputs.to(device)
+                labels = labels.to(device)
                 # Zero the parameter gradients
                 optimizer.zero_grad()
                 
