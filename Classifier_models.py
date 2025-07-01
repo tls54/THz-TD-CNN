@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+from tqdm import tqdm
 
 
 ## First basic CNN 
@@ -64,3 +65,35 @@ class CNN1D_Large(nn.Module):
         return x
 
 
+## Define a training process that works for any of the models
+def train_model(model, train_loader, criterion, optimizer, num_epochs=10):
+    loss_values = []
+    model.train()
+    
+    for epoch in range(num_epochs):
+        running_loss = 0.0
+        total_steps = len(train_loader)
+        
+        # Initialize tqdm with a progress bar for each epoch
+        with tqdm(train_loader, desc=f"Epoch {epoch+1}/{num_epochs}", unit="batch") as pbar:
+            for i, (inputs, labels) in enumerate(pbar):
+                # Zero the parameter gradients
+                optimizer.zero_grad()
+                
+                # Forward pass
+                outputs = model(inputs)
+                loss = criterion(outputs, labels)
+                
+                # Backward pass and optimization
+                loss.backward()
+                optimizer.step()
+                
+                # Update tqdm with the current loss
+                running_loss += loss.item()
+                pbar.set_postfix(loss=running_loss / (i + 1))  # Update loss on progress bar
+        
+        # Store the loss after each epoch
+        loss_values.append(running_loss / total_steps)
+        print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {running_loss / total_steps:.4f}")
+    
+    return loss_values
