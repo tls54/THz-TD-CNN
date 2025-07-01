@@ -8,7 +8,7 @@ from math import ceil
 
 L = 2**12  # Time points
 DOWNSAMPLE_FACTOR = 4
-DELTA_N_THRESHOLD = 0.5
+DELTA_N_THRESHOLD = 0.1
 
 
 workers = cpu_count()
@@ -151,13 +151,13 @@ def main():
         "synthetic_data": synthetic_data,
         "material_params": material_params,
         "num_layers": num_layers
-    }, "synthetic_data.pt")
+    }, "Validation.pt")
 
-    print("Dataset saved successfully as synthetic_data.pt")
+    print("Dataset saved successfully as Validation.pt")
 
 if __name__ == "__main__":
     LAYER_LIMS = [1, 3]
-    NUM_SAMPLES = 10_000
+    NUM_SAMPLES = 5_000
 
     N_RANGE = (1.1, 6.0)
     K_RANGE = (-0.1, 0.001)
