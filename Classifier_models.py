@@ -55,8 +55,8 @@ class CNN1D_Large(nn.Module):
 
         self.global_pool = nn.AdaptiveAvgPool1d(1)
 
-        self.fc1 = nn.Linear(256, 128)
-        self.fc2 = nn.Linear(128, num_classes)
+        self.fc1 = nn.Linear(256, 64)
+        self.fc2 = nn.Linear(64, num_classes)
 
     def forward(self, x):
         x = self.pool(torch.relu(self.bn1(self.conv1(x))))
