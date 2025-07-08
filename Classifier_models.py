@@ -73,37 +73,65 @@ class CNN1D_Large(nn.Module):
 
 
 ## Define a training process that works for any of the models
-def train_model(model, train_loader, criterion, optimizer, device, num_epochs=10):
+from tqdm import tqdm
+
+def train_model(model, train_loader, criterion, optimizer, device, num_epochs=10, verbose=True):
     loss_values = []
+    accuracy_values = []
     model.train()
+
+    if verbose:
+        for epoch in range(num_epochs):
+            running_loss = 0.0
+            correct = 0
+            total = 0
+            total_steps = len(train_loader)
+
+            with tqdm(train_loader, desc=f"Epoch {epoch+1}/{num_epochs}", unit="batch") as pbar:
+                for i, (inputs, labels) in enumerate(pbar):
+                    inputs = inputs.to(device)
+                    labels = labels.to(device)
+                    optimizer.zero_grad()
+
+                    outputs = model(inputs)
+                    loss = criterion(outputs, labels)
+                    loss.backward()
+                    optimizer.step()
+
+                    # Update loss
+                    running_loss += loss.item()
+
+                    # Compute accuracy
+                    _, predicted = torch.max(outputs, 1)
+                    correct += (predicted == labels).sum().item()
+                    total += labels.size(0)
+
+                    pbar.set_postfix(loss=running_loss / (i + 1))
+
+            epoch_loss = running_loss / total_steps
+            epoch_accuracy = correct / total
+            loss_values.append(epoch_loss)
+            accuracy_values.append(epoch_accuracy)
+
+            print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {epoch_loss:.4f}, Accuracy: {epoch_accuracy:.2%}")
     
-    for epoch in range(num_epochs):
-        running_loss = 0.0
-        total_steps = len(train_loader)
-        
-        # Initialize tqdm with a progress bar for each epoch
-        with tqdm(train_loader, desc=f"Epoch {epoch+1}/{num_epochs}", unit="batch") as pbar:
-            for i, (inputs, labels) in enumerate(pbar):
-                # Move data to device
+    else:
+        for epoch in tqdm(range(num_epochs), desc="Training", unit="epoch"):
+            running_loss = 0.0
+            total_steps = len(train_loader)
+
+            for inputs, labels in train_loader:
                 inputs = inputs.to(device)
                 labels = labels.to(device)
-                # Zero the parameter gradients
                 optimizer.zero_grad()
-                
-                # Forward pass
                 outputs = model(inputs)
                 loss = criterion(outputs, labels)
-                
-                # Backward pass and optimization
                 loss.backward()
                 optimizer.step()
-                
-                # Update tqdm with the current loss
                 running_loss += loss.item()
-                pbar.set_postfix(loss=running_loss / (i + 1))  # Update loss on progress bar
-        
-        # Store the loss after each epoch
-        loss_values.append(running_loss / total_steps)
-        print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {running_loss / total_steps:.4f}")
-    
-    return loss_values
+
+            epoch_loss = running_loss / total_steps
+            loss_values.append(epoch_loss)
+            # Optionally compute accuracy here too if you like
+
+    return loss_values, accuracy_values
