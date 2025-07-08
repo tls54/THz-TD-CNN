@@ -51,7 +51,7 @@ class CNN1D_Large(nn.Module):
         self.bn4 = nn.BatchNorm1d(256)
 
         self.pool = nn.MaxPool1d(2)
-        self.dropout = nn.Dropout(0.4)
+        self.dropout = nn.Dropout(0.5)
 
         self.global_pool = nn.AdaptiveAvgPool1d(1)
 
