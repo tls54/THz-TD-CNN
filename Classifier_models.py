@@ -8,6 +8,8 @@ def identify_device():
     print(f"Using device: {device}")
     return device
 
+# TODO: Write in a verbose flag for long epoch training
+
 ## First basic CNN 
 class CNN1D_Small(nn.Module):
     def __init__(self, input_channels=1, num_classes=3):
