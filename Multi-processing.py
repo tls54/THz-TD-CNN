@@ -151,13 +151,13 @@ def main():
         "synthetic_data": synthetic_data,
         "material_params": material_params,
         "num_layers": num_layers
-    }, "Validation.pt")
+    }, "Synthetic_data_60k.pt")
 
-    print("Dataset saved successfully as Validation.pt")
+    print("Dataset saved successfully as Synthetic_data_60k.pt")
 
 if __name__ == "__main__":
     LAYER_LIMS = [1, 3]
-    NUM_SAMPLES = 5_000
+    NUM_SAMPLES = 60_000
 
     N_RANGE = (1.1, 6.0)
     K_RANGE = (-0.1, 0.001)
