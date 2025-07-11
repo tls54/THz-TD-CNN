@@ -68,65 +68,70 @@ class CNN1D_Large(nn.Module):
 
 
 ## Define a training process that works for any of the models
-from tqdm import tqdm
 
-def train_model(model, train_loader, criterion, optimizer, device, num_epochs=10, verbose=False):
-    loss_values = []
-    accuracy_values = []
+from tqdm import tqdm
+import torch
+
+def train_model(model, train_loader, criterion, optimizer, device, num_epochs=10, verbose='epoch'):
+    """
+    Train a PyTorch model on THz TDS data.
+
+    Args:
+        model (nn.Module): The neural network to train.
+        train_loader (DataLoader): DataLoader for training data.
+        criterion: Loss function.
+        optimizer: Optimizer.
+        device: 'cuda' or 'cpu'.
+        num_epochs (int): Number of training epochs.
+        verbose (str): 'epoch', 'batch', or None. Controls tqdm verbosity.
+
+    Returns:
+        loss_values (list): List of average training loss per epoch.
+        accuracy_values (list): List of accuracy per epoch.
+    """
+    model.to(device)
     model.train()
 
-    if verbose:
-        for epoch in range(num_epochs):
-            running_loss = 0.0
-            correct = 0
-            total = 0
-            total_steps = len(train_loader)
+    loss_values = []
+    accuracy_values = []
 
-            with tqdm(train_loader, desc=f"Epoch {epoch+1}/{num_epochs}", unit="batch") as pbar:
-                for i, (inputs, labels) in enumerate(pbar):
-                    inputs = inputs.to(device)
-                    labels = labels.to(device)
-                    optimizer.zero_grad()
+    epoch_iter = range(num_epochs)
+    if verbose == 'epoch':
+        epoch_iter = tqdm(epoch_iter, desc="Training epochs", unit='epoch')
 
-                    outputs = model(inputs)
-                    loss = criterion(outputs, labels)
-                    loss.backward()
-                    optimizer.step()
+    for epoch in epoch_iter:
+        running_loss = 0.0
+        correct = 0
+        total = 0
 
-                    # Update loss
-                    running_loss += loss.item()
+        batch_iter = train_loader
+        if verbose == 'batch':
+            batch_iter = tqdm(train_loader, desc=f"Epoch {epoch+1}", unit='batch', leave=False)
 
-                    # Compute accuracy
-                    _, predicted = torch.max(outputs, 1)
-                    correct += (predicted == labels).sum().item()
-                    total += labels.size(0)
+        for inputs, labels in batch_iter:
+            inputs, labels = inputs.to(device), labels.to(device)
 
-                    pbar.set_postfix(loss=running_loss / (i + 1))
+            optimizer.zero_grad()
+            outputs = model(inputs)
 
-            epoch_loss = running_loss / total_steps
-            epoch_accuracy = correct / total
-            loss_values.append(epoch_loss)
-            accuracy_values.append(epoch_accuracy)
+            loss = criterion(outputs, labels)
+            loss.backward()
+            optimizer.step()
 
-            print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {epoch_loss:.4f}, Accuracy: {epoch_accuracy:.2%}")
-    
-    else:
-        for epoch in tqdm(range(num_epochs), desc="Training", unit="epoch"):
-            running_loss = 0.0
-            total_steps = len(train_loader)
+            running_loss += loss.item() * inputs.size(0)
 
-            for inputs, labels in train_loader:
-                inputs = inputs.to(device)
-                labels = labels.to(device)
-                optimizer.zero_grad()
-                outputs = model(inputs)
-                loss = criterion(outputs, labels)
-                loss.backward()
-                optimizer.step()
-                running_loss += loss.item()
+            # Calculate accuracy
+            _, predicted = torch.max(outputs.data, 1)
+            total += labels.size(0)
+            correct += (predicted == labels).sum().item()
 
-            epoch_loss = running_loss / total_steps
-            loss_values.append(epoch_loss)
-            # Optionally compute accuracy here too if you like
+        epoch_loss = running_loss / total
+        epoch_accuracy = correct / total
+
+        loss_values.append(epoch_loss)
+        accuracy_values.append(epoch_accuracy)
+
+        if verbose is None:
+            print(f"Epoch [{epoch+1}/{num_epochs}] - Loss: {epoch_loss:.4f} - Accuracy: {epoch_accuracy:.4f}")
 
     return loss_values, accuracy_values
