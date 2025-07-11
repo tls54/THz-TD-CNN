@@ -68,7 +68,6 @@ class CNN1D_Large(nn.Module):
 
 
 ## Define a training process that works for any of the models
-from tqdm import tqdm
 
 def train_model(model, train_loader, criterion, optimizer, device, num_epochs=10, verbose=False):
     loss_values = []
