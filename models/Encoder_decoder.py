@@ -1,4 +1,5 @@
 import torch
+from tqdm import tqdm
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
@@ -47,24 +48,41 @@ class Autoencoder(nn.Module):
     
 
 
-
-
-def train_autoencoder(model, dataloader, device, num_epochs=20, lr=1e-3):
+def train_autoencoder(model, dataloader, device, num_epochs=20, lr=1e-3, verbose='epoch'):
     model.to(device)
-    optimizer = optim.Adam(model.parameters(), lr=lr)
-    criterion = nn.MSELoss()
+    model.train()
 
-    for epoch in range(num_epochs):
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+    criterion = nn.MSELoss()
+    train_loss_values = []
+
+    epoch_iter = range(num_epochs)
+    if verbose == 'epoch':
+        epoch_iter = tqdm(epoch_iter, desc="Training epochs", unit='epoch')
+
+    for epoch in epoch_iter:
         model.train()
-        total_loss = 0
-        for x_batch in dataloader:
-            x_batch = x_batch[0].to(device)  # unpack TensorDataset
-            x_recon = model(x_batch)
-            loss = criterion(x_recon, x_batch)
+        running_loss = 0.0
+        total = 0
+
+        batch_iter = dataloader
+        if verbose == 'batch':
+            batch_iter = tqdm(dataloader, desc=f"Epoch {epoch+1}", unit='batch', leave=False)
+
+        for x_batch in batch_iter:
+            x_batch = x_batch[0].to(device)
 
             optimizer.zero_grad()
+            x_recon = model(x_batch)
+            loss = criterion(x_recon, x_batch)
             loss.backward()
             optimizer.step()
-            total_loss += loss.item()
 
-        print(f"Epoch {epoch+1}: Loss = {total_loss / len(dataloader):4f}")
+            running_loss += loss.item() * x_batch.size(0)
+            total += x_batch.size(0)
+
+        epoch_loss = running_loss / total
+        train_loss_values.append(epoch_loss)
+
+
+    return train_loss_values
