@@ -9,7 +9,7 @@ from math import ceil
 L = 2**12  # Time points
 DOWNSAMPLE_FACTOR = 4
 DELTA_N_THRESHOLD = 0.1
-
+noise_level = 1e-2
 
 workers = cpu_count()
 
@@ -99,7 +99,7 @@ def process_batch(args):
     reference_pulse, material_samples_batch, indices, deltat = args
     batch_results = []
     for i, idx in enumerate(indices):
-        pulse = simulate_parallel(reference_pulse, material_samples_batch[i], deltat, 0)[1].detach().cpu()[:L]
+        pulse = simulate_parallel(reference_pulse, material_samples_batch[i], deltat, noise_level)[1].detach().cpu()[:L]
         downsampled_pulse = downsample_tensor(pulse, DOWNSAMPLE_FACTOR)
         batch_results.append((downsampled_pulse, material_samples_batch[i], len(material_samples_batch[i])))
     return batch_results
@@ -151,9 +151,9 @@ def main():
         "synthetic_data": synthetic_data,
         "material_params": material_params,
         "num_layers": num_layers
-    }, "Validation.pt")
+    }, "Validation_noise_1eneg2.pt")
 
-    print("Dataset saved successfully as Validation.pt")
+    print("Dataset saved successfully as Validation_noise_1eneg2.pt")
 
 if __name__ == "__main__":
     LAYER_LIMS = [1, 3]
