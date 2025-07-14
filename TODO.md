@@ -1,0 +1,4 @@
+- [ ] Create system for saving models for extended testing.
+- [ ] Finish endcoder decoder mvp/test.
+- [ ] hard reset variables and store outputs such as loss and accuracy in model testing workflow.
+- [x] debug accuracy value in verbose=False.
