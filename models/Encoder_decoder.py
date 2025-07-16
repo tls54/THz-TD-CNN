@@ -99,6 +99,9 @@ class CNNAutoencoder(nn.Module):
         return x_recon
 
 
+## Variational Autoencoder model
+
+
 
 def train_autoencoder(model, dataloader, device, num_epochs=20, lr=1e-3, verbose='epoch'):
     model.to(device)
