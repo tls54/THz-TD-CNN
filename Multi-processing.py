@@ -9,7 +9,7 @@ from math import ceil
 L = 2**12  # Time points
 DOWNSAMPLE_FACTOR = 4
 DELTA_N_THRESHOLD = 0.1
-noise_level = 1e-2
+noise_level = 1e-4
 
 workers = cpu_count()
 
@@ -151,9 +151,9 @@ def main():
         "synthetic_data": synthetic_data,
         "material_params": material_params,
         "num_layers": num_layers
-    }, "Validation_noise_1eneg2.pt")
+    }, "Validation_noise_1eneg4.pt")
 
-    print("Dataset saved successfully as Validation_noise_1eneg2.pt")
+    print("Dataset saved successfully as Validation_noise_1eneg4.pt")
 
 if __name__ == "__main__":
     LAYER_LIMS = [1, 3]
