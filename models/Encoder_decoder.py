@@ -91,9 +91,13 @@ class CNNAutoencoder(nn.Module):
         self.decoder = CNNDecoder(input_dim, latent_dim)
 
     def forward(self, x):
+        #print(f"Input to encoder: {x.shape}")
         z = self.encoder(x)
+        #print(f"Latent z shape: {z.shape}")
         x_recon = self.decoder(z)
+        #print(f"Reconstructed x shape: {x_recon.shape}")
         return x_recon
+
 
 
 def train_autoencoder(model, dataloader, device, num_epochs=20, lr=1e-3, verbose='epoch'):
@@ -119,6 +123,8 @@ def train_autoencoder(model, dataloader, device, num_epochs=20, lr=1e-3, verbose
 
         for x_batch in batch_iter:
             x_batch = x_batch[0].to(device)
+            #print(f"Batch shape: {x_batch.shape}")  # Should be (batch_size, 1, 1024)
+
 
             optimizer.zero_grad()
             x_recon = model(x_batch)
