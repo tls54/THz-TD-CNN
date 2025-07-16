@@ -3,6 +3,44 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA
+from torch import nn as nn
+
+
+
+def test_model(index, model, device, time_pulses, deltat):
+    real_pulse = time_pulses[index]  
+    input_pulse = real_pulse.to(device)#.unsqueeze(0)
+
+    L = time_pulses.shape[1]
+    t_axis = np.arange(0, L*deltat, deltat)
+
+    model.eval()
+    with torch.no_grad():
+        recon_pulse = model(input_pulse)
+
+    # Bring both to CPU and remove batch dim if added
+    recon_pulse_cpu = recon_pulse.squeeze(0).cpu()
+    real_pulse_cpu = real_pulse.cpu()
+
+
+    criterion = nn.MSELoss()
+    loss = criterion(recon_pulse_cpu, real_pulse_cpu).item()
+    print(f'Loss between signals: {loss}')
+
+    # Convert to NumPy for plotting
+    recon_np = recon_pulse_cpu.numpy()
+    real_np = real_pulse_cpu.numpy()
+
+    plt.figure(figsize=(12,4))
+    plt.title('Example THz Time Domain pulse')
+    plt.plot(t_axis*1e12, real_np, label='Input Pulse')
+    plt.plot(t_axis*1e12, recon_np, label='Reconstructed Pulse')
+    plt.ylabel('Signal')
+    plt.xlabel('Time, t [ps]')
+    plt.legend()
+    plt.show()
+
+
 
 def plot_latent_space(model, dataloader, device, method='tsne', max_samples=1000):
     model.eval()
@@ -77,7 +115,7 @@ def plot_latent_space_with_labels(model, synthetic_data, labels, device, method=
 
     # Plot
     plt.figure(figsize=(7, 6))
-    scatter = plt.scatter(latents_2d[:, 0], latents_2d[:, 1], c=labels.numpy(), cmap='viridis', s=10, alpha=0.8)
+    scatter = plt.scatter(latents_2d[:, 0], latents_2d[:, 1], c=labels.numpy(), cmap='viridis', s=7, alpha=0.8)
     cbar = plt.colorbar(scatter, ticks=sorted(torch.unique(labels).tolist()))
     cbar.set_label('Number of Layers')
     plt.title(f"Latent Space Visualization with Labels ({method.upper()})")
