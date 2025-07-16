@@ -48,6 +48,54 @@ class Autoencoder(nn.Module):
     
 
 
+## CNN bases Auto-encoder
+class CNNEncoder(nn.Module):
+    def __init__(self, input_length=1024, latent_dim=32):
+        super().__init__()
+        self.encoder = nn.Sequential(
+            nn.Conv1d(1, 16, kernel_size=4, stride=2, padding=1),  # -> (16, 512)
+            nn.ReLU(),
+            nn.Conv1d(16, 32, kernel_size=4, stride=2, padding=1), # -> (32, 256)
+            nn.ReLU(),
+            nn.Conv1d(32, 64, kernel_size=4, stride=2, padding=1), # -> (64, 128)
+            nn.ReLU(),
+            nn.Flatten(),                                          # -> (64*128)
+            nn.Linear(64 * 128, latent_dim)
+        )
+
+    def forward(self, x):
+        return self.encoder(x)
+
+class CNNDecoder(nn.Module):
+    def __init__(self, output_length=1024, latent_dim=32):
+        super().__init__()
+        self.decoder_input = nn.Linear(latent_dim, 64 * 128)
+        self.decoder = nn.Sequential(
+            nn.Unflatten(1, (64, 128)),                            # -> (64, 128)
+            nn.ConvTranspose1d(64, 32, kernel_size=4, stride=2, padding=1),  # -> (32, 256)
+            nn.ReLU(),
+            nn.ConvTranspose1d(32, 16, kernel_size=4, stride=2, padding=1),  # -> (16, 512)
+            nn.ReLU(),
+            nn.ConvTranspose1d(16, 1, kernel_size=4, stride=2, padding=1),   # -> (1, 1024)
+        )
+
+    def forward(self, z):
+        x = self.decoder_input(z)
+        x = self.decoder(x)
+        return x
+
+class CNNAutoencoder(nn.Module):
+    def __init__(self, input_dim=1024, latent_dim=32):
+        super().__init__()
+        self.encoder = CNNEncoder(input_dim, latent_dim)
+        self.decoder = CNNDecoder(input_dim, latent_dim)
+
+    def forward(self, x):
+        z = self.encoder(x)
+        x_recon = self.decoder(z)
+        return x_recon
+
+
 def train_autoencoder(model, dataloader, device, num_epochs=20, lr=1e-3, verbose='epoch'):
     model.to(device)
     model.train()
