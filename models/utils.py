@@ -13,7 +13,6 @@ def identify_device():
     return device
 
 
-
 # Load the validation dataset
 def test_classifier(model, file_path, device):
 
