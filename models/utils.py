@@ -2,15 +2,39 @@
 import torch
 from torch.utils.data import DataLoader, TensorDataset
 import torch
+import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
-from sklearn.metrics import confusion_matrix, accuracy_score
+from sklearn.metrics import confusion_matrix, accuracy_score, f1_score
 
 ## Computer devide detection function
 def identify_device():
     device = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
     print(f"Using device: {device}")
     return device
+
+
+def print_metrics(all_labels, all_preds):
+    # Compute confusion matrix and accuracy
+    cm = confusion_matrix(all_labels, all_preds)
+    acc = accuracy_score(all_labels, all_preds)
+    f1_macro = f1_score(all_labels, all_preds, average='macro')
+    f1_weighted = f1_score(all_labels, all_preds, average='weighted')
+    f1_per_class = f1_score(all_labels, all_preds, average=None)  
+
+    print(f"\n Unseen dataset Accuracy: {acc:.4f}")
+    print(f'\n------------- F1 metrics -------------')
+    print("Layer metrics:")
+    print(f'Macro F1: {f1_macro:.3f}')
+    print(f'Weighted F1: {f1_weighted:.3f}')
+    
+    labels = np.unique(all_labels + all_preds)  # Get all unique labels in case some are missing in predictions
+
+    for label, score in zip(labels, f1_per_class):
+        print(f"Layer {label + 1}: F1 Score = {score:.3f}")
+    
+    return cm
+
 
 
 # Load the validation dataset
@@ -46,11 +70,10 @@ def test_classifier(model, file_path, device):
             all_preds.extend(preds.cpu().numpy())   # move back to CPU before numpy
             all_labels.extend(labels.cpu().numpy())
 
-    # Compute confusion matrix and accuracy
-    cm = confusion_matrix(all_labels, all_preds)
-    acc = accuracy_score(all_labels, all_preds)
 
-    print(f"\n Unseen dataset Accuracy: {acc:.4f}")
+
+    cm = print_metrics(all_labels, all_preds)
+
 
     # Plot confusion matrix
     plt.figure(figsize=(8, 6))
