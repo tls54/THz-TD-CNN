@@ -109,41 +109,65 @@ def process_batch(args):
 def main():
     print("Generating synthetic dataset (multi-process batched)...")
 
+    # Step 1: Generate the sample structure (how many layers per sample)
     samples = generate_samples()
     total_layers = sum(samples)
     print(f"Total layers to generate: {total_layers}")
 
+    # Step 2: Generate random optical properties (n, k, D) for all layers
     n_values, k_values, D_values = generate_material_parameters(samples, DELTA_N_THRESHOLD)
+    
+    # Step 3: Organize the parameters into structured material samples
     material_samples = construct_material_samples(samples, n_values, k_values, D_values)
 
-    deltat = 0.0194e-12
+    # Step 4: Simulate a reference THz pulse in free space (no material)
+    deltat = 0.0194e-12  # Time step in seconds
     reference_pulse = simulate_reference(L, deltat)
 
-    # --- Prepare batches ---
+    # Step 5: Split the data into batches for multiprocessing
     NUM_PROCESSES = min(workers, 32)
     batch_size = ceil(len(samples) / NUM_PROCESSES)
 
-    sample_batches = [samples[i*batch_size : min((i+1)*batch_size, len(samples))] for i in range(NUM_PROCESSES)]
-    material_batches = [material_samples[i*batch_size : min((i+1)*batch_size, len(material_samples))] for i in range(NUM_PROCESSES)]
-    index_batches = [list(range(i*batch_size, min((i+1)*batch_size, len(samples)))) for i in range(NUM_PROCESSES)]
+    sample_batches = [
+        samples[i * batch_size : min((i + 1) * batch_size, len(samples))]
+        for i in range(NUM_PROCESSES)
+    ]
+    material_batches = [
+        material_samples[i * batch_size : min((i + 1) * batch_size, len(material_samples))]
+        for i in range(NUM_PROCESSES)
+    ]
+    index_batches = [
+        list(range(i * batch_size, min((i + 1) * batch_size, len(samples))))
+        for i in range(NUM_PROCESSES)
+    ]
 
-    args = [(reference_pulse, material_batches[i], index_batches[i], deltat) for i in range(NUM_PROCESSES)]
+    # Prepare argument tuples for each process
+    args = [
+        (reference_pulse, material_batches[i], index_batches[i], deltat)
+        for i in range(NUM_PROCESSES)
+    ]
 
     print(f"Processing {NUM_SAMPLES} samples across {NUM_PROCESSES} processes...")
 
+    # Step 6: Run the processing in parallel using multiprocessing
     with Pool(processes=NUM_PROCESSES) as pool:
         results = list(tqdm(pool.imap_unordered(process_batch, args), total=NUM_PROCESSES, ncols=80))
 
     print("Processing complete. Aggregating results...")
 
+    # Step 7: Flatten the list of lists into a single list of results
     all_results = [item for sublist in results for item in sublist]
 
+    # Sanity check: confirm that we have generated all expected samples
     assert len(all_results) == NUM_SAMPLES, f"Expected {NUM_SAMPLES} samples, got {len(all_results)}"
 
+    # Unpack the results: synthetic THz data, corresponding parameters, and layer counts
     synthetic_data, material_params, num_layers = zip(*all_results)
 
+    # Step 8: Verify that the Δn constraint is satisfied
     validate_delta_n_spacing(material_samples, DELTA_N_THRESHOLD)
 
+    # Step 9: Stack tensors and save the dataset
     synthetic_data = torch.stack(synthetic_data)
     num_layers = torch.tensor(num_layers)
 
@@ -151,9 +175,9 @@ def main():
         "synthetic_data": synthetic_data,
         "material_params": material_params,
         "num_layers": num_layers
-    }, "data/finetune_noise_1eneg3.pt")
+    }, "data/testfinetune_noise_1eneg3.pt")
 
-    print("Dataset saved successfully as finetune_noise_1eneg3.pt")
+    print("Dataset saved successfully as testfinetune_noise_1eneg3.pt")
 
 if __name__ == "__main__":
     LAYER_LIMS = [1, 3]
