@@ -5,7 +5,7 @@ import torch
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
-from sklearn.metrics import confusion_matrix, accuracy_score, f1_score
+from sklearn.metrics import confusion_matrix, accuracy_score, f1_score, precision_score, recall_score
 from torchsummary import summary
 
 ## Computer devide detection function
@@ -30,20 +30,38 @@ def print_metrics(all_labels, all_preds):
     # Compute confusion matrix and accuracy
     cm = confusion_matrix(all_labels, all_preds)
     acc = accuracy_score(all_labels, all_preds)
+
+    # F1 metrics
     f1_macro = f1_score(all_labels, all_preds, average='macro')
     f1_weighted = f1_score(all_labels, all_preds, average='weighted')
-    f1_per_class = f1_score(all_labels, all_preds, average=None)  
+    f1_per_class = f1_score(all_labels, all_preds, average=None)
 
-    print(f"\n Unseen dataset Accuracy: {acc:.4f}")
-    print(f'\n------------- F1 metrics -------------')
-    print("Layer metrics:")
-    print(f'Macro F1: {f1_macro:.3f}')
-    print(f'Weighted F1: {f1_weighted:.3f}')
+    # Precision metrics
+    precision_macro = precision_score(all_labels, all_preds, average='macro', zero_division=0)
+    precision_weighted = precision_score(all_labels, all_preds, average='weighted', zero_division=0)
+    precision_per_class = precision_score(all_labels, all_preds, average=None, zero_division=0)
+
+    # Recall metrics
+    recall_macro = recall_score(all_labels, all_preds, average='macro', zero_division=0)
+    recall_weighted = recall_score(all_labels, all_preds, average='weighted', zero_division=0)
+    recall_per_class = recall_score(all_labels, all_preds, average=None, zero_division=0)
+
+    # Get all unique labels (some might be missing in predictions)
+    labels = np.unique(all_labels + all_preds)
+
+    print(f"\nUnseen dataset Accuracy: {acc:.4f}")
+    print(f'\n------------- Global Metrics -------------')
+    print(f'Macro F1:           {f1_macro:.3f}')
+    print(f'Weighted F1:        {f1_weighted:.3f}')
+    print(f'Macro Precision:    {precision_macro:.3f}')
+    print(f'Weighted Precision: {precision_weighted:.3f}')
+    print(f'Macro Recall:       {recall_macro:.3f}')
+    print(f'Weighted Recall:    {recall_weighted:.3f}')
     
-    labels = np.unique(all_labels + all_preds)  # Get all unique labels in case some are missing in predictions
-
-    for label, score in zip(labels, f1_per_class):
-        print(f"Layer {label + 1}: F1 Score = {score:.3f}")
+    print(f'\n------------- Per-Class Metrics -------------')
+    print(f"{'Layer':<8} {'F1':>6} {'Precision':>10} {'Recall':>8}")
+    for label, f1, prec, rec in zip(labels, f1_per_class, precision_per_class, recall_per_class):
+        print(f"Layer {label + 1:<3} {f1:>6.3f} {prec:>10.3f} {rec:>8.3f}")
     
     return cm
 
