@@ -4,3 +4,4 @@ __pycache__/
 *.png
 Training plots
 Archive/
+mixed_data
