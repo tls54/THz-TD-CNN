@@ -1,6 +1,8 @@
+from tqdm import tqdm
 import torch
 import torch.nn as nn
-from tqdm import tqdm
+import torch.optim as optim
+
 
 
 ## Regression model inspired by large classifier architecture
@@ -37,3 +39,79 @@ class CNN1D_Regressor(nn.Module):
         x = self.dropout(x)
         x = self.fc2(x)  
         return x
+    
+
+
+
+def train_model(
+    model,
+    train_loader,
+    val_loader=None,
+    num_epochs=20,
+    lr=1e-3,
+    loss_fn=None,
+    optimizer_cls=None,
+    device=None,
+    verbose_level='epoch'  # 'epoch' or 'batch'
+):
+    model.to(device)
+    loss_fn = loss_fn if loss_fn is not None else nn.MSELoss()
+    optimizer_cls = optimizer_cls if optimizer_cls is not None else optim.Adam
+    optimizer = optimizer_cls(model.parameters(), lr=lr)
+
+    train_losses = []
+    val_losses = []
+
+    for epoch in tqdm(range(num_epochs), desc='Epochs', disable=(verbose_level == 'batch')):
+        model.train()
+        running_train_loss = 0.0
+
+        if verbose_level == 'batch':
+            loop = tqdm(train_loader, desc=f"Epoch {epoch+1}/{num_epochs}", leave=False)
+        else:
+            loop = train_loader
+
+        for batch in loop:
+            inputs, targets = batch
+            inputs = inputs.to(device)
+            targets = targets.to(device)
+
+            optimizer.zero_grad()
+            outputs = model(inputs)
+
+            loss = loss_fn(outputs, targets)
+            loss.backward()
+            optimizer.step()
+
+            running_train_loss += loss.item()
+
+            if verbose_level == 'batch':
+                loop.set_postfix(train_loss=loss.item())
+
+        epoch_train_loss = running_train_loss / len(train_loader)
+        train_losses.append(epoch_train_loss)
+
+        if verbose_level == 'epoch':
+            tqdm.write(f"[Epoch {epoch+1}/{num_epochs}] Train Loss: {epoch_train_loss:.6f}")
+
+        if val_loader is not None:
+            model.eval()
+            running_val_loss = 0.0
+
+            with torch.no_grad():
+                for batch in val_loader:
+                    inputs, targets = batch
+                    inputs = inputs.to(device)
+                    targets = targets.to(device)
+
+                    outputs = model(inputs)
+                    val_loss = loss_fn(outputs, targets)
+                    running_val_loss += val_loss.item()
+
+            epoch_val_loss = running_val_loss / len(val_loader)
+            val_losses.append(epoch_val_loss)
+
+            if verbose_level == 'epoch':
+                tqdm.write(f"[Epoch {epoch+1}/{num_epochs}] Val Loss: {epoch_val_loss:.6f}")
+
+    return train_losses, val_losses if val_loader is not None else train_losses
