@@ -13,6 +13,6 @@ def convert_target_to_vector(material_params):
     out = []
     for n_complex, d in material_params:
         n = n_complex.real
-        k = -n_complex.imag  # extinction coefficient (positive means loss)
+        k = n_complex.imag  # extinction coefficient (negative means loss)
         out.extend([n, k, d])
     return torch.tensor(out, dtype=torch.float32)
