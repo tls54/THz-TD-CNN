@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import confusion_matrix, accuracy_score, f1_score, precision_score, recall_score
 from torchsummary import summary
 
-## Computer devide detection function
+## Computer device detection function
 def identify_device():
     device = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
     print(f"Using device: {device}")
