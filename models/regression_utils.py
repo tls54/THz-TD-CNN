@@ -1,5 +1,5 @@
 import torch
-from data.data_lims import N_RANGE, K_RANGE, D_RANGE
+from regression_data.data_lims import N_RANGE, K_RANGE, D_RANGE
 
 # --- Normalizer / Denormalizer ---
 
