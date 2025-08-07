@@ -1,4 +1,5 @@
 import torch
+from torch.utils.data import random_split, DataLoader
 from regression_data.data_lims import N_RANGE, K_RANGE, D_RANGE
 
 # --- Normalizer / Denormalizer ---
@@ -67,3 +68,35 @@ def load_regression_dataset(path):
     print(f"Number of samples: {len(dataset)}")
     print(f"Shape of input pulse: {dataset[0][0].shape}, target vector: {dataset[0][1].shape}")
     return dataset
+
+
+
+
+def get_train_val_loaders(
+    dataset_path,
+    batch_size=64,
+    val_split=0.1,
+    shuffle=True,
+    seed=42,
+    num_workers=0,  # set >0 if using multiprocessing
+    pin_memory=True,
+):
+    full_dataset = load_regression_dataset(dataset_path)
+
+    val_size = int(len(full_dataset) * val_split)
+    train_size = len(full_dataset) - val_size
+
+    generator = torch.Generator().manual_seed(seed)
+    train_dataset, val_dataset = random_split(full_dataset, [train_size, val_size], generator=generator)
+
+    train_loader = DataLoader(
+        train_dataset, batch_size=batch_size, shuffle=shuffle,
+        num_workers=num_workers, pin_memory=pin_memory
+    )
+
+    val_loader = DataLoader(
+        val_dataset, batch_size=batch_size, shuffle=False,
+        num_workers=num_workers, pin_memory=pin_memory
+    )
+
+    return train_loader, val_loader
