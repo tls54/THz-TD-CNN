@@ -175,15 +175,15 @@ def main():
         "synthetic_data": synthetic_data,
         "material_params": material_params,
         "num_layers": num_layers
-    }, "regression_data/train_3_layer_nonoise_n1to8.pt")
+    }, "regression_data/unseen_3_layer_nonoise_n1to8.pt")
 
-    print("Dataset saved successfully as train_3_layer_nonoise_n1to8.pt in mixed_data")
+    print("Dataset saved successfully as unseen_3_layer_nonoise_n1to8.pt in mixed_data")
 
 
 
 if __name__ == "__main__":
     LAYER_LIMS = [3, 3]
-    NUM_SAMPLES = 30_000
+    NUM_SAMPLES = 5_000
 
     N_RANGE = (1.1, 8.0)
     K_RANGE = (-0.1, 0.001)

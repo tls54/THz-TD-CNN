@@ -40,7 +40,7 @@ class CNN1D_Regressor(nn.Module):
         x = self.fc2(x)  
         return x
     
-
+# Expected output shape: 9D vector: [n1, k1, d1, n2, k2, d2, ...]
 
 
 def train_model(
