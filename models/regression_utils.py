@@ -5,34 +5,67 @@ import torch.nn as nn
 import numpy as np
 from sklearn.metrics import r2_score
 from tabulate import tabulate
+from sklearn.preprocessing import MinMaxScaler
 
 
 # --- Normalizer / Denormalizer ---
 
-def normalize_material_params(params_vector):
-    """Min-max normalize 9D vector [n1, k1, d1, ..., n3, k3, d3]."""
-    n_min, n_max = N_RANGE
-    k_min, k_max = K_RANGE
-    d_min, d_max = D_RANGE
 
-    norm = params_vector.clone()
-    norm[0::3] = (norm[0::3] - n_min) / (n_max - n_min)  # n
-    norm[1::3] = (norm[1::3] - k_min) / (k_max - k_min)  # k
-    norm[2::3] = (norm[2::3] - d_min) / (d_max - d_min)  # d
-    return norm
+
+
+# Precompute per-parameter min/max arrays for 9D vector [n1,k1,d1,...,n3,k3,d3]
+min_vals = np.array([N_RANGE[0], K_RANGE[0], D_RANGE[0],
+                    N_RANGE[0], K_RANGE[0], D_RANGE[0],
+                    N_RANGE[0], K_RANGE[0], D_RANGE[0]], dtype=np.float32)
+
+max_vals = np.array([N_RANGE[1], K_RANGE[1], D_RANGE[1],
+                    N_RANGE[1], K_RANGE[1], D_RANGE[1],
+                    N_RANGE[1], K_RANGE[1], D_RANGE[1]], dtype=np.float32)
+
+# Initialize scaler with feature_range [0,1] and fixed min/max
+_SCALER = MinMaxScaler(feature_range=(0, 1))
+# Fit on min/max bounds to lock the scaler
+_SCALER.fit(np.stack([min_vals, max_vals], axis=0))
+
+
+def normalize_material_params(params_vector):
+    """
+    Normalize a 9D material parameter vector using fixed min/max ranges.
+    Accepts torch.Tensor of shape [9] or [batch, 9].
+    Returns tensor of same shape.
+    """
+    single_input = False
+    if params_vector.ndim == 1:
+        params_vector = params_vector.unsqueeze(0)
+        single_input = True
+
+    params_np = params_vector.cpu().numpy()
+    scaled_np = _SCALER.transform(params_np)
+    scaled_tensor = torch.from_numpy(scaled_np).to(params_vector.device).type(params_vector.dtype)
+
+    if single_input:
+        return scaled_tensor.squeeze(0)
+    return scaled_tensor
 
 
 def denormalize_material_params(norm_vector):
-    """Inverse transform of normalized 9D vector back to physical values."""
-    n_min, n_max = N_RANGE
-    k_min, k_max = K_RANGE
-    d_min, d_max = D_RANGE
+    """
+    Inverse transform of normalized 9D vector back to physical values.
+    Accepts torch.Tensor of shape [9] or [batch, 9].
+    Returns tensor of same shape.
+    """
+    single_input = False
+    if norm_vector.ndim == 1:
+        norm_vector = norm_vector.unsqueeze(0)
+        single_input = True
 
-    denorm = norm_vector.clone()
-    denorm[0::3] = denorm[0::3] * (n_max - n_min) + n_min
-    denorm[1::3] = denorm[1::3] * (k_max - k_min) + k_min
-    denorm[2::3] = denorm[2::3] * (d_max - d_min) + d_min
-    return denorm
+    norm_np = norm_vector.cpu().numpy()
+    denorm_np = _SCALER.inverse_transform(norm_np)
+    denorm_tensor = torch.from_numpy(denorm_np).to(norm_vector.device).type(norm_vector.dtype)
+
+    if single_input:
+        return denorm_tensor.squeeze(0)
+    return denorm_tensor
 
 # --- Vectorize raw target from dataset ---
 
