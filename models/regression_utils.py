@@ -88,6 +88,7 @@ def get_train_val_loaders(
 
     val_size = int(len(full_dataset) * val_split)
     train_size = len(full_dataset) - val_size
+    num_samples = int(len(full_dataset))
 
     generator = torch.Generator().manual_seed(seed)
     train_dataset, val_dataset = random_split(full_dataset, [train_size, val_size], generator=generator)
@@ -102,7 +103,7 @@ def get_train_val_loaders(
         num_workers=num_workers, pin_memory=pin_memory
     )
 
-    return train_loader, val_loader
+    return train_loader, val_loader, num_samples
 
 
 def compute_metrics(preds, targets, scaled=True):
