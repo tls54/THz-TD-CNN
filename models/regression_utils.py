@@ -9,7 +9,6 @@ from sklearn.preprocessing import MinMaxScaler
 
 
 # --- Normalizer / Denormalizer ---
-
 # Precompute per-parameter min/max arrays for 9D vector [n1,k1,d1,...,n3,k3,d3]
 min_vals = np.array([N_RANGE[0], K_RANGE[0], D_RANGE[0],
                     N_RANGE[0], K_RANGE[0], D_RANGE[0],
