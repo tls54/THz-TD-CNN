@@ -175,9 +175,9 @@ def main():
         "synthetic_data": synthetic_data,
         "material_params": material_params,
         "num_layers": num_layers
-    }, "regression_data/train_3_layer_30k_nonoise_n1to6.pt")
+    }, "regression_data/train_3_layer_30k_nonoise_n1to6_max_d_250micron.pt")
 
-    print("Dataset saved successfully as train_3_layer_30k_nonoise_n1to6.pt in regression_data")
+    print("Dataset saved successfully as train_3_layer_30k_nonoise_n1to6_max_d_250micron.pt in regression_data")
 
 
 
@@ -187,7 +187,7 @@ if __name__ == "__main__":
 
     N_RANGE = (1.1, 6.0)
     K_RANGE = (-0.1, 0.001)
-    D_RANGE = (0.05e-3, 0.5e-3)
+    D_RANGE = (0.05e-3, 0.25e-3)
 
     print("Running multiprocessing batched data generation script")
     
