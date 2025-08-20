@@ -72,7 +72,7 @@ class ParameterTrainer:
     """Training and evaluation framework for parameter estimation models."""
     
     def __init__(self, model: nn.Module, param_ranges: Dict, 
-                 device: str = 'cuda' if torch.cuda.is_available() else 'cpu'):
+                device: str = 'cuda' if torch.cuda.is_available() else 'cpu'):
         self.model = model.to(device)
         self.param_ranges = param_ranges
         self.device = device
@@ -150,7 +150,7 @@ class ParameterTrainer:
         return metrics
     
     def _calculate_metrics(self, predictions: torch.Tensor, 
-                          targets: torch.Tensor) -> Dict:
+                        targets: torch.Tensor) -> Dict:
         """Calculate comprehensive evaluation metrics."""
         metrics = {}
         param_names = ['n1', 'k1', 'd1', 'n2', 'k2', 'd2', 'n3', 'k3', 'd3']
@@ -198,8 +198,8 @@ class ParameterTrainer:
         return metrics
     
     def train(self, train_loader: DataLoader, val_loader: DataLoader,
-              num_epochs: int = 100, lr: float = 1e-3, 
-              save_dir: str = 'regression_experiments', experiment_name: str = None):
+            num_epochs: int = 100, lr: float = 1e-3, 
+            save_dir: str = 'regression_experiments', experiment_name: str = None):
         """Full training loop with validation and model saving."""
         
         if experiment_name is None:
