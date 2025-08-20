@@ -245,8 +245,8 @@ class ParameterTrainer:
             # Detailed progress every 10 epochs
             if epoch % 10 == 0:
                 tqdm.write(f"Epoch {epoch:3d}: Train Loss={train_loss:.6f}, "
-                          f"Val Loss={val_loss:.6f}, Val R²={val_metrics['overall']['r2']:.4f}, "
-                          f"Avg Tolerance={val_metrics['avg_tolerance_satisfaction']:.4f}")
+                        f"Val Loss={val_loss:.6f}, Val R²={val_metrics['overall']['r2']:.4f}, "
+                        f"Avg Tolerance={val_metrics['avg_tolerance_satisfaction']:.4f}")
             
             # Save best model
             if val_loss < best_val_loss:
