@@ -125,7 +125,7 @@ def main():
     reference_pulse = simulate_reference(L, deltat)
 
     # Split the data into batches for multiprocessing
-    NUM_PROCESSES = min(workers, 1)
+    NUM_PROCESSES = min(workers, 16)
     batch_size = ceil(len(samples) / NUM_PROCESSES)
 
     sample_batches = [
